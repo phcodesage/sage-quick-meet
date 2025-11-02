@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mic, MicOff, Video, VideoOff, Phone } from 'lucide-react';
+import { DeviceSelector } from './DeviceSelector';
 
 interface MediaControlsProps {
   onToggleAudio: () => boolean;
@@ -7,9 +8,27 @@ interface MediaControlsProps {
   onLeave: () => void;
   isAudioOnly?: boolean;
   isRoomCreator?: boolean;
+  onAudioInputChange?: (deviceId: string) => void;
+  onAudioOutputChange?: (deviceId: string) => void;
+  onVideoInputChange?: (deviceId: string) => void;
+  audioInputDeviceId?: string;
+  audioOutputDeviceId?: string;
+  videoInputDeviceId?: string;
 }
 
-export function MediaControls({ onToggleAudio, onToggleVideo, onLeave, isAudioOnly = false, isRoomCreator = false }: MediaControlsProps) {
+export function MediaControls({ 
+  onToggleAudio, 
+  onToggleVideo, 
+  onLeave, 
+  isAudioOnly = false, 
+  isRoomCreator = false,
+  onAudioInputChange,
+  onAudioOutputChange,
+  onVideoInputChange,
+  audioInputDeviceId,
+  audioOutputDeviceId,
+  videoInputDeviceId
+}: MediaControlsProps) {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(!isAudioOnly);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -35,6 +54,17 @@ export function MediaControls({ onToggleAudio, onToggleVideo, onLeave, isAudioOn
   return (
     <>
       <div className="flex items-center justify-center gap-4">
+        {/* Device selector */}
+        {onAudioInputChange && onAudioOutputChange && onVideoInputChange && (
+          <DeviceSelector
+            onAudioInputChange={onAudioInputChange}
+            onAudioOutputChange={onAudioOutputChange}
+            onVideoInputChange={onVideoInputChange}
+            currentAudioInputId={audioInputDeviceId}
+            currentAudioOutputId={audioOutputDeviceId}
+            currentVideoInputId={videoInputDeviceId}
+          />
+        )}
         <button
           onClick={handleToggleAudio}
           className={`p-4 rounded-full transition-all ${

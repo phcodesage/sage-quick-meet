@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { createPeerConnection, getMediaStream, generateClientId } from '../utils/webrtc';
+import { createPeerConnection, generateClientId, getMediaStreamWithDevice } from '../utils/webrtc';
 
 const WS_URL = 'ws://localhost:3001';
 
@@ -17,6 +17,11 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
   const [peerName, setPeerName] = useState<string>('');
   const [connectionStatus, setConnectionStatus] = useState<string>('Initializing...');
   const [isAudioOnly, setIsAudioOnly] = useState(false);
+  
+  // Device selection state
+  const [audioInputDeviceId, setAudioInputDeviceId] = useState<string>('');
+  const [audioOutputDeviceId, setAudioOutputDeviceId] = useState<string>('');
+  const [videoInputDeviceId, setVideoInputDeviceId] = useState<string>('');
 
   const ws = useRef<WebSocket | null>(null);
   const pc = useRef<RTCPeerConnection | null>(null);
@@ -27,7 +32,13 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
 
   const initializeMedia = useCallback(async () => {
     try {
-      const stream = await getMediaStream(true, true);
+      // Use device IDs if they are set, otherwise use default devices
+      const stream = await getMediaStreamWithDevice(
+        audioInputDeviceId || undefined,
+        videoInputDeviceId || undefined,
+        true, // audio
+        true  // video
+      );
       setLocalStream(stream);
       
       // Check if we have video tracks to determine if we're in audio-only mode
@@ -40,6 +51,23 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
         setConnectionStatus('Connected to microphone (audio-only mode)');
       }
       
+      // Save the device IDs from the stream for future reference
+      if (!audioInputDeviceId && stream.getAudioTracks().length > 0) {
+        const audioTrack = stream.getAudioTracks()[0];
+        const audioSettings = audioTrack.getSettings();
+        if (audioSettings.deviceId) {
+          setAudioInputDeviceId(audioSettings.deviceId);
+        }
+      }
+      
+      if (!videoInputDeviceId && stream.getVideoTracks().length > 0) {
+        const videoTrack = stream.getVideoTracks()[0];
+        const videoSettings = videoTrack.getSettings();
+        if (videoSettings.deviceId) {
+          setVideoInputDeviceId(videoSettings.deviceId);
+        }
+      }
+      
       return stream;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to access camera/microphone';
@@ -47,7 +75,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
       setConnectionStatus('Media access denied');
       throw err;
     }
-  }, []);
+  }, [audioInputDeviceId, videoInputDeviceId]);
 
   const processQueuedCandidates = useCallback(async () => {
     if (!pc.current || !hasRemoteDescription.current) return;
@@ -590,6 +618,115 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
     }
   }, [localStream]);
 
+  // Function to switch audio input device
+  const switchAudioDevice = useCallback(async (deviceId: string) => {
+    setAudioInputDeviceId(deviceId);
+    
+    if (!localStream) return;
+    
+    try {
+      // Stop current audio tracks
+      localStream.getAudioTracks().forEach(track => {
+        track.stop();
+      });
+      
+      // Get new stream with the selected audio device
+      const newStream = await getMediaStreamWithDevice(
+        deviceId,
+        videoInputDeviceId,
+        true,
+        false
+      );
+      
+      // Add new audio tracks to the existing stream
+      newStream.getAudioTracks().forEach(track => {
+        localStream.addTrack(track);
+      });
+      
+      // Replace the audio track in the peer connection if it exists
+      if (pc.current && isConnected) {
+        const audioSenders = pc.current.getSenders().filter(sender => 
+          sender.track && sender.track.kind === 'audio'
+        );
+        
+        if (audioSenders.length > 0 && newStream.getAudioTracks().length > 0) {
+          await audioSenders[0].replaceTrack(newStream.getAudioTracks()[0]);
+          console.log('🎤 Replaced audio track in peer connection');
+        }
+      }
+      
+      setLocalStream(localStream);
+      console.log('🎤 Audio device switched to:', deviceId);
+    } catch (err) {
+      console.error('Error switching audio device:', err);
+      setError('Failed to switch audio device');
+    }
+  }, [localStream, videoInputDeviceId, isConnected]);
+  
+  // Function to switch video input device
+  const switchVideoDevice = useCallback(async (deviceId: string) => {
+    setVideoInputDeviceId(deviceId);
+    
+    if (!localStream) return;
+    
+    try {
+      // Stop current video tracks
+      localStream.getVideoTracks().forEach(track => {
+        track.stop();
+      });
+      
+      // Get new stream with the selected video device
+      const newStream = await getMediaStreamWithDevice(
+        audioInputDeviceId,
+        deviceId,
+        false,
+        true
+      );
+      
+      // Add new video tracks to the existing stream
+      newStream.getVideoTracks().forEach(track => {
+        localStream.addTrack(track);
+      });
+      
+      // Replace the video track in the peer connection if it exists
+      if (pc.current && isConnected) {
+        const videoSenders = pc.current.getSenders().filter(sender => 
+          sender.track && sender.track.kind === 'video'
+        );
+        
+        if (videoSenders.length > 0 && newStream.getVideoTracks().length > 0) {
+          await videoSenders[0].replaceTrack(newStream.getVideoTracks()[0]);
+          console.log('📹 Replaced video track in peer connection');
+        }
+      }
+      
+      setLocalStream(localStream);
+      setIsAudioOnly(false);
+      console.log('📹 Video device switched to:', deviceId);
+    } catch (err) {
+      console.error('Error switching video device:', err);
+      setError('Failed to switch video device');
+    }
+  }, [localStream, audioInputDeviceId, isConnected]);
+  
+  // Function to set audio output device (speakers)
+  const setAudioOutput = useCallback((deviceId: string) => {
+    setAudioOutputDeviceId(deviceId);
+    
+    // Apply the audio output device to any audio/video elements
+    const audioElements = document.querySelectorAll('audio, video') as NodeListOf<HTMLMediaElement & { sinkId?: string }>;
+    
+    audioElements.forEach(element => {
+      if (element.setSinkId && typeof element.setSinkId === 'function') {
+        element.setSinkId(deviceId).then(() => {
+          console.log('🔊 Audio output device set to:', deviceId);
+        }).catch(err => {
+          console.error('Error setting audio output device:', err);
+        });
+      }
+    });
+  }, []);
+
   return {
     localStream,
     remoteStream,
@@ -601,5 +738,11 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
     toggleAudio,
     toggleVideo,
     leaveCall,
+    switchAudioDevice,
+    switchVideoDevice,
+    setAudioOutput,
+    audioInputDeviceId,
+    videoInputDeviceId,
+    audioOutputDeviceId
   };
 }

@@ -23,6 +23,12 @@ export function Room({ roomId, userName, onLeave, isRoomCreator }: RoomProps) {
     toggleAudio,
     toggleVideo,
     leaveCall,
+    switchAudioDevice,
+    switchVideoDevice,
+    setAudioOutput,
+    audioInputDeviceId,
+    videoInputDeviceId,
+    audioOutputDeviceId
   } = useWebRTC({ roomId, userName });
 
   const [notification, setNotification] = useState<{
@@ -153,6 +159,12 @@ export function Room({ roomId, userName, onLeave, isRoomCreator }: RoomProps) {
               onLeave={handleLeave}
               isAudioOnly={isAudioOnly}
               isRoomCreator={isRoomCreator}
+              onAudioInputChange={switchAudioDevice}
+              onAudioOutputChange={setAudioOutput}
+              onVideoInputChange={switchVideoDevice}
+              audioInputDeviceId={audioInputDeviceId}
+              audioOutputDeviceId={audioOutputDeviceId}
+              videoInputDeviceId={videoInputDeviceId}
             />
           </div>
         </footer>
