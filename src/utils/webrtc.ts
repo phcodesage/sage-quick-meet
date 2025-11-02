@@ -106,6 +106,39 @@ export function generateClientId(): string {
   return Date.now().toString() + Math.random().toString(36).substring(2, 15);
 }
 
+// Screen sharing functions
+export async function getScreenShareStream(): Promise<MediaStream> {
+  try {
+    // Request screen sharing with audio (system audio if available)
+    // Using 'any' type to bypass TypeScript constraints for browser-specific features
+    const displayMediaOptions: any = {
+      video: {
+        cursor: 'always',
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        frameRate: { ideal: 30 }
+      },
+      audio: true
+    };
+    
+    const stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+    
+    // Add event listener for when user stops sharing via the browser UI
+    const videoTrack = stream.getVideoTracks()[0];
+    if (videoTrack) {
+      videoTrack.onended = () => {
+        console.log('📺 User ended screen sharing via browser UI');
+        // The calling code should listen for this event and handle it
+      };
+    }
+    
+    return stream;
+  } catch (error) {
+    console.error('Error getting screen share:', error);
+    throw error;
+  }
+}
+
 // Device enumeration functions
 export async function getAudioInputDevices(): Promise<MediaDeviceInfo[]> {
   await navigator.mediaDevices.getUserMedia({ audio: true });

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { createPeerConnection, generateClientId, getMediaStreamWithDevice } from '../utils/webrtc';
+import { createPeerConnection, generateClientId, getMediaStreamWithDevice, getScreenShareStream } from '../utils/webrtc';
 
 const WS_URL = 'ws://localhost:3001';
 
@@ -17,11 +17,27 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
   const [peerName, setPeerName] = useState<string>('');
   const [connectionStatus, setConnectionStatus] = useState<string>('Initializing...');
   const [isAudioOnly, setIsAudioOnly] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [remoteScreenSharing, setRemoteScreenSharing] = useState(false);
+  
+  // Chat state
+  const [messages, setMessages] = useState<Array<{
+    id: string;
+    sender: string;
+    text: string;
+    timestamp: number;
+    isLocal: boolean;
+  }>>([]);
+  const [remoteTyping, setRemoteTyping] = useState(false);
   
   // Device selection state
   const [audioInputDeviceId, setAudioInputDeviceId] = useState<string>('');
   const [audioOutputDeviceId, setAudioOutputDeviceId] = useState<string>('');
   const [videoInputDeviceId, setVideoInputDeviceId] = useState<string>('');
+  
+  // Store original video track when screen sharing
+  const originalVideoTrack = useRef<MediaStreamTrack | null>(null);
+  const screenShareStream = useRef<MediaStream | null>(null);
 
   const ws = useRef<WebSocket | null>(null);
   const pc = useRef<RTCPeerConnection | null>(null);
@@ -429,6 +445,24 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
             case 'ice-candidate':
               await handleIceCandidate(data.candidate);
               break;
+            case 'screen-share-state':
+              console.log('📺 Remote peer screen sharing state:', data.isSharing);
+              setRemoteScreenSharing(data.isSharing);
+              break;
+            case 'chat-message':
+              console.log('💬 Received chat message:', data.message);
+              setMessages(prev => [...prev, {
+                id: Date.now().toString() + Math.random(),
+                sender: data.senderName,
+                text: data.message,
+                timestamp: data.timestamp,
+                isLocal: false
+              }]);
+              break;
+            case 'typing-indicator':
+              console.log('⌨️ Remote typing:', data.isTyping);
+              setRemoteTyping(data.isTyping);
+              break;
             case 'peer-left':
               setRemoteStream(null);
               remoteStreamRef.current = null;
@@ -727,6 +761,165 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
     });
   }, []);
 
+  // Toggle screen sharing
+  const toggleScreenShare = useCallback(async () => {
+    if (!pc.current || !localStream) {
+      setError('Cannot share screen: connection not established');
+      return false;
+    }
+
+    try {
+      if (isScreenSharing) {
+        // Stop screen sharing and revert to camera
+        console.log('📺 Stopping screen sharing');
+        
+        // Stop all screen share tracks
+        if (screenShareStream.current) {
+          screenShareStream.current.getTracks().forEach(track => {
+            track.stop();
+          });
+        }
+        
+        // If we have the original video track, restore it
+        if (originalVideoTrack.current) {
+          // Find video sender
+          const videoSenders = pc.current.getSenders().filter(sender => 
+            sender.track && sender.track.kind === 'video'
+          );
+          
+          if (videoSenders.length > 0) {
+            // Replace the screen share track with the original camera track
+            await videoSenders[0].replaceTrack(originalVideoTrack.current);
+            console.log('📹 Restored camera video track');
+            
+            // Add the track back to local stream if needed
+            const hasTrack = localStream.getTracks().some(track => track.id === originalVideoTrack.current?.id);
+            if (!hasTrack && originalVideoTrack.current) {
+              localStream.addTrack(originalVideoTrack.current);
+            }
+          }
+          
+          originalVideoTrack.current = null;
+        }
+        
+        screenShareStream.current = null;
+        setIsScreenSharing(false);
+        
+        // Notify remote peer that screen sharing stopped
+        if (ws.current && peerId.current) {
+          ws.current.send(JSON.stringify({
+            type: 'screen-share-state',
+            isSharing: false,
+            target: peerId.current
+          }));
+        }
+        
+        return false;
+      } else {
+        // Start screen sharing
+        console.log('📺 Starting screen sharing');
+        
+        // Get screen share stream
+        const stream = await getScreenShareStream();
+        screenShareStream.current = stream;
+        
+        // Store original video track
+        const currentVideoTrack = localStream.getVideoTracks()[0];
+        if (currentVideoTrack) {
+          originalVideoTrack.current = currentVideoTrack;
+        }
+        
+        // Get the video track from screen share
+        const screenVideoTrack = stream.getVideoTracks()[0];
+        if (screenVideoTrack) {
+          // Handle when user stops sharing via browser UI
+          screenVideoTrack.onended = async () => {
+            if (isScreenSharing) {
+              await toggleScreenShare();
+            }
+          };
+          
+          // Find video sender
+          const videoSenders = pc.current.getSenders().filter(sender => 
+            sender.track && sender.track.kind === 'video'
+          );
+          
+          if (videoSenders.length > 0) {
+            // Replace camera track with screen share track
+            await videoSenders[0].replaceTrack(screenVideoTrack);
+            console.log('📺 Replaced camera with screen share');
+          } else {
+            // Add as a new sender if no video sender exists
+            pc.current.addTrack(screenVideoTrack, localStream);
+            console.log('📺 Added screen share as new track');
+          }
+          
+          setIsScreenSharing(true);
+          
+          // Notify remote peer that screen sharing started
+          if (ws.current && peerId.current) {
+            ws.current.send(JSON.stringify({
+              type: 'screen-share-state',
+              isSharing: true,
+              target: peerId.current
+            }));
+          }
+          
+          return true;
+        } else {
+          setError('No video track found in screen share');
+          return false;
+        }
+      }
+    } catch (err) {
+      console.error('Error toggling screen share:', err);
+      const message = err instanceof Error ? err.message : 'Failed to toggle screen sharing';
+      setError(message);
+      return false;
+    }
+  }, [localStream, isScreenSharing]);
+
+  // Send chat message
+  const sendMessage = useCallback((message: string) => {
+    if (!ws.current || !peerId.current) return;
+
+    const messageData = {
+      id: Date.now().toString() + Math.random(),
+      sender: userName,
+      text: message,
+      timestamp: Date.now(),
+      isLocal: true
+    };
+
+    // Add to local messages
+    setMessages(prev => [...prev, messageData]);
+
+    // Send to remote peer
+    ws.current.send(JSON.stringify({
+      type: 'chat-message',
+      message: message,
+      senderName: userName,
+      timestamp: Date.now(),
+      target: peerId.current
+    }));
+  }, [userName]);
+
+  // Send typing indicator
+  const sendTypingIndicator = useCallback((isTyping: boolean) => {
+    if (!ws.current || !peerId.current) return;
+
+    ws.current.send(JSON.stringify({
+      type: 'typing-indicator',
+      isTyping,
+      target: peerId.current
+    }));
+  }, []);
+
+  // Clear chat messages
+  const clearChat = useCallback(() => {
+    setMessages([]);
+  }, []);
+
   return {
     localStream,
     remoteStream,
@@ -735,14 +928,22 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
     peerName,
     connectionStatus,
     isAudioOnly,
+    isScreenSharing,
+    remoteScreenSharing,
     toggleAudio,
     toggleVideo,
+    toggleScreenShare,
     leaveCall,
     switchAudioDevice,
     switchVideoDevice,
     setAudioOutput,
     audioInputDeviceId,
     videoInputDeviceId,
-    audioOutputDeviceId
+    audioOutputDeviceId,
+    messages,
+    remoteTyping,
+    sendMessage,
+    sendTypingIndicator,
+    clearChat
   };
 }

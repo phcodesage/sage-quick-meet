@@ -121,6 +121,11 @@ wss.on('connection', (ws) => {
         case 'offer':
         case 'answer':
         case 'ice-candidate':
+        case 'screen-share-state':
+          handleSignaling(data);
+          break;
+        case 'chat-message':
+        case 'typing-indicator':
           handleSignaling(data);
           break;
         case 'leave':

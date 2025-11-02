@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Mic, MicOff, Video, VideoOff, Phone } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, MonitorUp, Monitor } from 'lucide-react';
 import { DeviceSelector } from './DeviceSelector';
 
 interface MediaControlsProps {
   onToggleAudio: () => boolean;
   onToggleVideo: () => boolean;
+  onToggleScreenShare?: () => Promise<boolean>;
   onLeave: () => void;
   isAudioOnly?: boolean;
+  isScreenSharing?: boolean;
   isRoomCreator?: boolean;
   onAudioInputChange?: (deviceId: string) => void;
   onAudioOutputChange?: (deviceId: string) => void;
@@ -19,8 +21,10 @@ interface MediaControlsProps {
 export function MediaControls({ 
   onToggleAudio, 
   onToggleVideo, 
+  onToggleScreenShare,
   onLeave, 
   isAudioOnly = false, 
+  isScreenSharing = false,
   isRoomCreator = false,
   onAudioInputChange,
   onAudioOutputChange,
@@ -97,6 +101,23 @@ export function MediaControls({
         >
           {isVideoEnabled && !isAudioOnly ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
         </button>
+
+        {/* Screen sharing button */}
+        {onToggleScreenShare && !isAudioOnly && (
+          <button
+            onClick={() => {
+              if (onToggleScreenShare) onToggleScreenShare();
+            }}
+            className={`p-4 rounded-full transition-all ${
+              isScreenSharing
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-gray-700 hover:bg-gray-600 text-white'
+            }`}
+            title={isScreenSharing ? 'Stop sharing screen' : 'Share your screen'}
+          >
+            {isScreenSharing ? <Monitor className="w-6 h-6" /> : <MonitorUp className="w-6 h-6" />}
+          </button>
+        )}
 
         <button
           onClick={handleLeave}
