@@ -432,18 +432,35 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
 
     return () => {
       mounted = false;
+      console.log('🧹 Component unmounting - cleaning up media tracks');
 
       if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
+        localStream.getTracks().forEach(track => {
+          if (track.readyState === 'live') {
+            track.stop();
+            console.log(`✅ Cleanup: Stopped ${track.kind} track on unmount`);
+          }
+        });
+      }
+
+      if (remoteStreamRef.current) {
+        remoteStreamRef.current.getTracks().forEach(track => {
+          if (track.readyState === 'live') {
+            track.stop();
+            console.log(`✅ Cleanup: Stopped remote ${track.kind} track on unmount`);
+          }
+        });
       }
 
       if (pc.current) {
         pc.current.close();
+        console.log('✅ Cleanup: Closed peer connection on unmount');
       }
 
       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
         ws.current.send(JSON.stringify({ type: 'leave' }));
         ws.current.close();
+        console.log('✅ Cleanup: Closed WebSocket on unmount');
       }
     };
   }, [roomId, userName, initializeMedia, createOffer, handleOffer, handleAnswer, handleIceCandidate]);
@@ -471,20 +488,37 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
     return false;
   }, [localStream]);
 
-  const leaveCall = useCallback(() => {
+  const leaveCall = useCallback((shouldReload = true) => {
+    console.log('🚪 Leaving call - stopping all media tracks');
+    
     // Stop all local media tracks to release camera/microphone
     if (localStream) {
       localStream.getTracks().forEach(track => {
-        track.stop();
-        console.log(`Stopped ${track.kind} track`);
+        if (track.readyState === 'live') {
+          track.stop();
+          console.log(`✅ Stopped ${track.kind} track (${track.id})`);
+        } else {
+          console.log(`⚠️ Track ${track.kind} already stopped`);
+        }
       });
       setLocalStream(null);
+    }
+
+    // Stop remote stream tracks as well
+    if (remoteStreamRef.current) {
+      remoteStreamRef.current.getTracks().forEach(track => {
+        if (track.readyState === 'live') {
+          track.stop();
+          console.log(`✅ Stopped remote ${track.kind} track`);
+        }
+      });
     }
 
     // Close peer connection
     if (pc.current) {
       pc.current.close();
       pc.current = null;
+      console.log('✅ Closed peer connection');
     }
 
     // Close WebSocket connection
@@ -492,6 +526,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
       ws.current.send(JSON.stringify({ type: 'leave' }));
       ws.current.close();
       ws.current = null;
+      console.log('✅ Closed WebSocket connection');
     }
 
     // Reset states
@@ -500,8 +535,19 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
     setIsConnected(false);
     setError(null);
     setPeerName('');
+    peerId.current = null;
     setConnectionStatus('Disconnected');
     setIsAudioOnly(false);
+    
+    console.log('🚪 Call cleanup completed');
+
+    // Reload the page to ensure complete cleanup
+    if (shouldReload) {
+      console.log('🔄 Reloading page for complete cleanup...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500); // Small delay to ensure cleanup logs are visible
+    }
   }, [localStream]);
 
   return {
