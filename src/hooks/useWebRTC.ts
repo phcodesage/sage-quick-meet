@@ -364,13 +364,18 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
             userName,
             clientId: clientId.current
           }));
+          console.log('📡 Sent join message:', {
+            type: 'join',
+            roomId,
+            userName,
+            clientId: clientId.current
+          });
           setConnectionStatus('Waiting for other participant...');
         };
 
         ws.current.onmessage = async (event) => {
-          if (!mounted) return;
-
           const data = JSON.parse(event.data);
+          console.log('📡 Received message:', data.type, data);
 
           switch (data.type) {
             case 'joined':
@@ -403,6 +408,37 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
               setPeerName('');
               peerId.current = null;
               setConnectionStatus('Participant left');
+              break;
+            case 'call-ended-by-creator':
+              console.log('📞 Received call-ended-by-creator event:', data);
+              setConnectionStatus('Call ended by room creator');
+              setError(`Call ended: ${data.creatorName} ended the call`);
+              
+              // Clean up media tracks
+              if (localStream) {
+                localStream.getTracks().forEach(track => {
+                  if (track.readyState === 'live') {
+                    track.stop();
+                    console.log(`📞 Stopped ${track.kind} track due to call end`);
+                  }
+                });
+              }
+              
+              // Clean up peer connection
+              if (pc.current) {
+                pc.current.close();
+                pc.current = null;
+                console.log('📞 Closed peer connection due to call end');
+              }
+              
+              // Store the notification message for after redirect
+              localStorage.setItem('callEndedNotification', `${data.creatorName} ended the call`);
+              console.log('📞 Stored notification, redirecting to home...');
+              
+              // Redirect to home page after a short delay
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 1000);
               break;
             case 'error':
               setError(data.message);
@@ -488,65 +524,69 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
     return false;
   }, [localStream]);
 
-  const leaveCall = useCallback((shouldReload = true) => {
-    console.log('🚪 Leaving call - stopping all media tracks');
+  const leaveCall = useCallback((shouldReload = true, isEndCall = false) => {
+    console.log('🚪 Leaving call...');
     
+    // Send leave or end-call message to server FIRST before cleanup
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      if (isEndCall) {
+        console.log('📞 Sending end-call message to server');
+        console.log('📞 WebSocket state:', ws.current.readyState);
+        ws.current.send(JSON.stringify({ type: 'end-call' }));
+        console.log('📞 End-call message sent, waiting before close...');
+        // Don't close WebSocket immediately for end-call to allow server response
+        setTimeout(() => {
+          if (ws.current) {
+            console.log('📞 Closing WebSocket after delay');
+            ws.current.close();
+          }
+        }, 500); // Increased delay
+      } else {
+        console.log('📞 Sending leave message to server');
+        ws.current.send(JSON.stringify({ type: 'leave' }));
+        ws.current.close();
+      }
+    } else {
+      console.log('📞 WebSocket not available or not open:', ws.current?.readyState);
+    }
+
     // Stop all local media tracks to release camera/microphone
     if (localStream) {
       localStream.getTracks().forEach(track => {
         if (track.readyState === 'live') {
           track.stop();
-          console.log(`✅ Stopped ${track.kind} track (${track.id})`);
-        } else {
-          console.log(`⚠️ Track ${track.kind} already stopped`);
-        }
-      });
-      setLocalStream(null);
-    }
-
-    // Stop remote stream tracks as well
-    if (remoteStreamRef.current) {
-      remoteStreamRef.current.getTracks().forEach(track => {
-        if (track.readyState === 'live') {
-          track.stop();
-          console.log(`✅ Stopped remote ${track.kind} track`);
+          console.log(`🎥 Stopped ${track.kind} track`);
         }
       });
     }
 
-    // Close peer connection
+    // Clean up peer connection
     if (pc.current) {
       pc.current.close();
       pc.current = null;
-      console.log('✅ Closed peer connection');
+      console.log('🔌 Closed peer connection');
     }
 
-    // Close WebSocket connection
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({ type: 'leave' }));
-      ws.current.close();
-      ws.current = null;
-      console.log('✅ Closed WebSocket connection');
-    }
-
-    // Reset states
+    // Clear state
+    setLocalStream(null);
     setRemoteStream(null);
     remoteStreamRef.current = null;
     setIsConnected(false);
-    setError(null);
     setPeerName('');
     peerId.current = null;
+    setError(null);
     setConnectionStatus('Disconnected');
     setIsAudioOnly(false);
-    
-    console.log('🚪 Call cleanup completed');
 
-    // Reload the page to ensure complete cleanup
+    // Reset WebSocket after delay for end-call
+    if (!isEndCall) {
+      ws.current = null;
+    }
+
     if (shouldReload) {
-      console.log('🔄 Reloading page for complete cleanup...');
       setTimeout(() => {
         window.location.reload();
-      }, 500); // Small delay to ensure cleanup logs are visible
+      }, isEndCall ? 200 : 500);
     }
   }, [localStream]);
 

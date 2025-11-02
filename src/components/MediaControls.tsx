@@ -6,9 +6,10 @@ interface MediaControlsProps {
   onToggleVideo: () => boolean;
   onLeave: () => void;
   isAudioOnly?: boolean;
+  isRoomCreator?: boolean;
 }
 
-export function MediaControls({ onToggleAudio, onToggleVideo, onLeave, isAudioOnly = false }: MediaControlsProps) {
+export function MediaControls({ onToggleAudio, onToggleVideo, onLeave, isAudioOnly = false, isRoomCreator = false }: MediaControlsProps) {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(!isAudioOnly);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -70,7 +71,7 @@ export function MediaControls({ onToggleAudio, onToggleVideo, onLeave, isAudioOn
         <button
           onClick={handleLeave}
           className="p-4 rounded-full bg-red-600 hover:bg-red-700 text-white transition-all"
-          title="Leave call"
+          title={isRoomCreator ? "End call" : "Leave call"}
         >
           <Phone className="w-6 h-6" />
         </button>
@@ -79,8 +80,15 @@ export function MediaControls({ onToggleAudio, onToggleVideo, onLeave, isAudioOn
       {showLeaveConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Leave the call?</h3>
-            <p className="text-gray-600 mb-6">Are you sure you want to leave this call?</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {isRoomCreator ? "End the call?" : "Leave the call?"}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {isRoomCreator 
+                ? "Are you sure you want to end this call? This will disconnect all participants." 
+                : "Are you sure you want to leave this call?"
+              }
+            </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLeaveConfirm(false)}
@@ -92,7 +100,7 @@ export function MediaControls({ onToggleAudio, onToggleVideo, onLeave, isAudioOn
                 onClick={confirmLeave}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
               >
-                Leave
+                {isRoomCreator ? "End Call" : "Leave"}
               </button>
             </div>
           </div>

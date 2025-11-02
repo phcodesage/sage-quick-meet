@@ -9,9 +9,10 @@ interface RoomProps {
   roomId: string;
   userName: string;
   onLeave: () => void;
+  isRoomCreator: boolean;
 }
 
-export function Room({ roomId, userName, onLeave }: RoomProps) {
+export function Room({ roomId, userName, onLeave, isRoomCreator }: RoomProps) {
   const {
     localStream,
     remoteStream,
@@ -29,6 +30,15 @@ export function Room({ roomId, userName, onLeave }: RoomProps) {
     type: 'success' | 'error' | 'info';
   } | null>(null);
 
+  // Check for call ended notification on component mount
+  useEffect(() => {
+    const callEndedMessage = localStorage.getItem('callEndedNotification');
+    if (callEndedMessage) {
+      setNotification({ message: callEndedMessage, type: 'info' });
+      localStorage.removeItem('callEndedNotification');
+    }
+  }, []);
+
   const inviteLink = `${window.location.origin}/room/${roomId}`;
 
   const copyInviteLink = async () => {
@@ -41,7 +51,7 @@ export function Room({ roomId, userName, onLeave }: RoomProps) {
   };
 
   const handleLeave = () => {
-    leaveCall();
+    leaveCall(true, isRoomCreator);
     onLeave();
   };
 
@@ -59,13 +69,20 @@ export function Room({ roomId, userName, onLeave }: RoomProps) {
             <h1 className="text-xl font-semibold text-white">Room: {roomId}</h1>
             <p className="text-sm text-gray-400 mt-1">{connectionStatus}</p>
           </div>
-          <button
-            onClick={copyInviteLink}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-          >
-            <Copy className="w-4 h-4" />
-            Copy invite link
-          </button>
+          {!remoteStream ? (
+            <button
+              onClick={copyInviteLink}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              <Copy className="w-4 h-4" />
+              Copy invite link
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 bg-green-600 text-white font-medium py-2 px-4 rounded-lg">
+              <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
+              <span>Call in progress with {peerName}</span>
+            </div>
+          )}
         </div>
       </header>
 
@@ -135,6 +152,7 @@ export function Room({ roomId, userName, onLeave }: RoomProps) {
               onToggleVideo={toggleVideo}
               onLeave={handleLeave}
               isAudioOnly={isAudioOnly}
+              isRoomCreator={isRoomCreator}
             />
           </div>
         </footer>

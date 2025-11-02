@@ -5,25 +5,38 @@ import { generateRoomId } from '../utils/webrtc';
 interface HomeProps {
   onCreateMeeting: (roomId: string, userName: string) => void;
   onJoinMeeting: (roomId: string, userName: string) => void;
+  autoJoinRoomId?: string;
 }
 
-export function Home({ onCreateMeeting, onJoinMeeting }: HomeProps) {
-  const [joinInput, setJoinInput] = useState('');
+export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomeProps) {
   const [userName, setUserName] = useState('');
+  const [joinInput, setJoinInput] = useState('');
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [action, setAction] = useState<'create' | 'join' | null>(null);
 
-  // Check if there's a room ID in the URL on component mount
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+  } | null>(null);
+
+  // Check for call ended notification and auto-join room on component mount
   useEffect(() => {
-    const path = window.location.pathname;
-    const roomMatch = path.match(/\/room\/([^\/]+)/);
+    console.log('🔍 Home: useEffect triggered, autoJoinRoomId:', autoJoinRoomId, 'showNamePrompt:', showNamePrompt);
     
-    if (roomMatch) {
-      setJoinInput(roomMatch[1]);
+    const callEndedMessage = localStorage.getItem('callEndedNotification');
+    if (callEndedMessage) {
+      setNotification({ message: callEndedMessage, type: 'info' });
+      localStorage.removeItem('callEndedNotification');
+    }
+
+    // Auto-join room if URL contains room ID
+    if (autoJoinRoomId && !showNamePrompt) {
+      console.log('🔍 Home: Auto-joining room:', autoJoinRoomId);
+      setJoinInput(`${window.location.origin}/room/${autoJoinRoomId}`);
       setAction('join');
       setShowNamePrompt(true);
     }
-  }, []);
+  }, [autoJoinRoomId, showNamePrompt]);
 
   const handleCreateClick = () => {
     setAction('create');
@@ -108,8 +121,15 @@ export function Home({ onCreateMeeting, onJoinMeeting }: HomeProps) {
         ) : (
           <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Enter your name</h2>
-              <p className="text-sm text-gray-600">This will be shown to other participants</p>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                {autoJoinRoomId ? 'Join this meeting' : 'Enter your name'}
+              </h2>
+              <p className="text-sm text-gray-600">
+                {autoJoinRoomId 
+                  ? `Enter your name to join room: ${autoJoinRoomId.slice(0, 8)}...`
+                  : 'This will be shown to other participants'
+                }
+              </p>
             </div>
 
             <input
@@ -128,6 +148,7 @@ export function Home({ onCreateMeeting, onJoinMeeting }: HomeProps) {
                   setShowNamePrompt(false);
                   setUserName('');
                   setAction(null);
+                  setJoinInput('');
                 }}
                 className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-xl transition-colors"
               >
@@ -138,9 +159,19 @@ export function Home({ onCreateMeeting, onJoinMeeting }: HomeProps) {
                 disabled={!userName.trim()}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Continue
+                {autoJoinRoomId ? 'Join Meeting' : 'Continue'}
               </button>
             </div>
+          </div>
+        )}
+
+        {notification && (
+          <div className={`p-4 rounded-xl ${
+            notification.type === 'success' ? 'bg-green-100 text-green-800' :
+            notification.type === 'error' ? 'bg-red-100 text-red-800' :
+            'bg-blue-100 text-blue-800'
+          }`}>
+            {notification.message}
           </div>
         )}
 

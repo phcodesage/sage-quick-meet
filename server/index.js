@@ -107,10 +107,12 @@ app.get('/get-ice-servers', async (req, res) => {
 wss.on('connection', (ws) => {
   let currentRoom = null;
   let clientId = null;
+  let isEndingCall = false;
 
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message.toString());
+      console.log('📡 Server received message:', data.type, 'from client:', clientId);
 
       switch (data.type) {
         case 'join':
@@ -124,6 +126,10 @@ wss.on('connection', (ws) => {
         case 'leave':
           handleLeave();
           break;
+        case 'end-call':
+          console.log('📞 Received end-call message from client:', clientId);
+          handleEndCall();
+          break;
         default:
           console.log('Unknown message type:', data.type);
       }
@@ -133,7 +139,10 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    handleLeave();
+    console.log(`📞 WebSocket closed for client ${clientId}, isEndingCall: ${isEndingCall}`);
+    if (!isEndingCall) {
+      handleLeave();
+    }
   });
 
   ws.on('error', (error) => {
@@ -205,14 +214,53 @@ wss.on('connection', (ws) => {
     }
   }
 
-  function handleLeave() {
+  function handleEndCall() {
     if (!currentRoom || !clientId) return;
 
     const room = rooms.get(currentRoom);
     if (!room) return;
 
+    console.log(`📞 Room creator ${clientId} ending call in room ${currentRoom}`);
+    console.log(`📞 Notifying ${room.size - 1} other participants`);
+
+    // Get creator name before cleanup
+    const creatorName = room.get(clientId)?.userName || 'Room creator';
+
+    // Notify all other participants that the call was ended by the creator
+    room.forEach((client, id) => {
+      if (id !== clientId) {
+        console.log(`📞 Sending call-ended-by-creator to ${id}`);
+        try {
+          client.ws.send(JSON.stringify({
+            type: 'call-ended-by-creator',
+            creatorName: creatorName
+          }));
+        } catch (error) {
+          console.error(`Failed to send end-call message to ${id}:`, error);
+        }
+      }
+    });
+
+    // Mark this connection as ended to prevent handleLeave from running
+    isEndingCall = true;
+
+    // Clean up the entire room
+    rooms.delete(currentRoom);
+    console.log(`📞 Room ${currentRoom} deleted`);
+    currentRoom = null;
+    clientId = null;
+  }
+
+  function handleLeave() {
+    if (!currentRoom || !clientId || isEndingCall) return;
+
+    const room = rooms.get(currentRoom);
+    if (!room) return;
+
+    // Remove client from room
     room.delete(clientId);
 
+    // Notify other participants
     room.forEach((client) => {
       client.ws.send(JSON.stringify({
         type: 'peer-left',
@@ -220,6 +268,7 @@ wss.on('connection', (ws) => {
       }));
     });
 
+    // Clean up empty room
     if (room.size === 0) {
       rooms.delete(currentRoom);
     }
