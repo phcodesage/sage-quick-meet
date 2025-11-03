@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPeerConnection, generateClientId, getMediaStreamWithDevice, getScreenShareStream } from '../utils/webrtc';
+import { config } from '../config/env';
 
-const WS_URL = 'ws://localhost:3001';
+const WS_URL = config.wsUrl;
 
 interface UseWebRTCProps {
   roomId: string;

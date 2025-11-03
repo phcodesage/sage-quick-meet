@@ -1,7 +1,9 @@
+import { config } from '../config/env';
+
 // Fetch ICE servers dynamically from server
 async function getIceServers(): Promise<RTCConfiguration> {
   try {
-    const response = await fetch('http://localhost:3001/get-ice-servers');
+    const response = await fetch(`${config.apiUrl}/get-ice-servers`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -44,12 +46,15 @@ export async function getMediaStream(audio = true, video = true): Promise<MediaS
       audio: audio ? {
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: true
+        autoGainControl: true,
+        sampleRate: 48000,
+        channelCount: 2
       } : false,
       video: video ? {
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        frameRate: { ideal: 30 }
+        width: { ideal: 1920, max: 3840 },
+        height: { ideal: 1080, max: 2160 },
+        frameRate: { ideal: 60, max: 60 },
+        aspectRatio: { ideal: 16/9 }
       } : false
     };
 
@@ -170,13 +175,16 @@ export async function getMediaStreamWithDevice(
         deviceId: audioDeviceId ? { exact: audioDeviceId } : undefined,
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: true
+        autoGainControl: true,
+        sampleRate: 48000,
+        channelCount: 2
       } : false,
       video: video ? {
         deviceId: videoDeviceId ? { exact: videoDeviceId } : undefined,
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        frameRate: { ideal: 30 }
+        width: { ideal: 1920, max: 3840 },
+        height: { ideal: 1080, max: 2160 },
+        frameRate: { ideal: 60, max: 60 },
+        aspectRatio: { ideal: 16/9 }
       } : false
     };
 

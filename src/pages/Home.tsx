@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Video, Plus, LogIn } from 'lucide-react';
+import { Video, Plus, LogIn, Shuffle } from 'lucide-react';
 import { generateRoomId } from '../utils/webrtc';
+import { generateRandomName } from '../utils/nameGenerator';
 
 interface HomeProps {
   onCreateMeeting: (roomId: string, userName: string) => void;
@@ -49,6 +50,11 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
     setShowNamePrompt(true);
   };
 
+  const handleGenerateRandomName = () => {
+    const randomName = generateRandomName();
+    setUserName(randomName);
+  };
+
   const handleSubmitName = () => {
     if (!userName.trim()) return;
 
@@ -70,27 +76,30 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-cyan-50 flex items-center justify-center p-4 animate-gradient-shift">
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
+        {/* Header with floating animation */}
+        <div className="text-center animate-fade-in-down">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl mb-4 shadow-lg animate-float hover:scale-110 transition-transform duration-300">
             <Video className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">QuickMeet</h1>
-          <p className="text-gray-600">Simple, secure 1-on-1 video calls</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2 bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+            Meetra
+          </h1>
+          <p className="text-gray-600 animate-fade-in">Simple, secure 1-on-1 video calls</p>
         </div>
 
         {!showNamePrompt ? (
-          <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 space-y-6 animate-slide-up hover:shadow-2xl transition-shadow duration-300">
             <button
               onClick={handleCreateClick}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center gap-3 transition-colors"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center gap-3 transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 group"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
               Create Meeting
             </button>
 
-            <div className="relative">
+            <div className="relative animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
               </div>
@@ -99,28 +108,28 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
               <input
                 type="text"
                 placeholder="Enter room code or invite link"
                 value={joinInput}
                 onChange={(e) => setJoinInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleJoinClick()}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-300 hover:border-blue-300 focus:scale-105"
               />
               <button
                 onClick={handleJoinClick}
                 disabled={!joinInput.trim()}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 group"
               >
-                <LogIn className="w-5 h-5" />
+                <LogIn className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 Join Meeting
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
-            <div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 space-y-6 animate-slide-up hover:shadow-2xl transition-shadow duration-300">
+            <div className="animate-fade-in">
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
                 {autoJoinRoomId ? 'Join this meeting' : 'Enter your name'}
               </h2>
@@ -132,17 +141,32 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
               </p>
             </div>
 
-            <input
-              type="text"
-              placeholder="Your name"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSubmitName()}
-              autoFocus
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            />
+            <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSubmitName()}
+                  autoFocus
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-300 hover:border-blue-300 focus:scale-105"
+                />
+                <button
+                  type="button"
+                  onClick={handleGenerateRandomName}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 group"
+                  title="Generate random name"
+                >
+                  <Shuffle className="w-5 h-5 group-hover:rotate-180 transition-transform duration-300" />
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 text-center">
+                Click <Shuffle className="w-3 h-3 inline" /> to generate a random name
+              </p>
+            </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
               <button
                 onClick={() => {
                   setShowNamePrompt(false);
@@ -150,14 +174,14 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
                   setAction(null);
                   setJoinInput('');
                 }}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-xl transition-colors"
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 active:scale-95"
               >
                 Back
               </button>
               <button
                 onClick={handleSubmitName}
                 disabled={!userName.trim()}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 hover:shadow-lg"
               >
                 {autoJoinRoomId ? 'Join Meeting' : 'Continue'}
               </button>
@@ -166,7 +190,7 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
         )}
 
         {notification && (
-          <div className={`p-4 rounded-xl ${
+          <div className={`p-4 rounded-xl animate-slide-in-bottom ${
             notification.type === 'success' ? 'bg-green-100 text-green-800' :
             notification.type === 'error' ? 'bg-red-100 text-red-800' :
             'bg-blue-100 text-blue-800'
@@ -175,10 +199,98 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
           </div>
         )}
 
-        <div className="text-center text-sm text-gray-500">
+        <div className="text-center text-sm text-gray-500 animate-fade-in" style={{ animationDelay: '0.3s' }}>
           <p>WebRTC-powered peer-to-peer video calling</p>
         </div>
       </div>
+
+      <style>{`
+        @keyframes fade-in-down {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes slide-up {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes slide-in-bottom {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+
+        @keyframes gradient-shift {
+          0%, 100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+        }
+
+        .animate-fade-in-down {
+          animation: fade-in-down 0.6s ease-out;
+        }
+
+        .animate-fade-in {
+          animation: fade-in 0.6s ease-out;
+          animation-fill-mode: both;
+        }
+
+        .animate-slide-up {
+          animation: slide-up 0.5s ease-out;
+        }
+
+        .animate-slide-in-bottom {
+          animation: slide-in-bottom 0.4s ease-out;
+        }
+
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+
+        .animate-gradient-shift {
+          background-size: 200% 200%;
+          animation: gradient-shift 15s ease infinite;
+        }
+      `}</style>
     </div>
   );
 }

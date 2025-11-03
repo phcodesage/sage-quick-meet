@@ -145,6 +145,11 @@ export function Room({ roomId, userName, onLeave, isRoomCreator }: RoomProps) {
                     autoPlay
                     playsInline
                     className="w-full h-full object-contain"
+                    style={{
+                      maxWidth: '100%',
+                      width: '100%',
+                      height: '100%'
+                    }}
                   />
                   <div className="absolute bottom-4 left-4 bg-black bg-opacity-60 px-3 py-1.5 rounded-lg">
                     <span className="text-white text-sm font-medium">
@@ -178,6 +183,11 @@ export function Room({ roomId, userName, onLeave, isRoomCreator }: RoomProps) {
                     autoPlay
                     playsInline
                     className="w-full h-full object-cover"
+                    style={{
+                      maxWidth: '100%',
+                      width: '100%',
+                      height: '100%'
+                    }}
                   />
                   <div className="absolute bottom-4 left-4 bg-black bg-opacity-60 px-3 py-1.5 rounded-lg">
                     <span className="text-white text-sm font-medium">

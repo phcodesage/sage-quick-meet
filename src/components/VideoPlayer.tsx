@@ -28,6 +28,11 @@ export function VideoPlayer({ stream, userName, muted = false, isLocal = false }
           playsInline
           muted={muted}
           className="w-full h-full object-cover"
+          style={{ 
+            maxWidth: '100%',
+            width: '100%',
+            height: '100%'
+          }}
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center">
