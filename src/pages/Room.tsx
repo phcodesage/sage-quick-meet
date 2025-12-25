@@ -93,24 +93,24 @@ export function Room({ roomId, userName, onLeave, isRoomCreator }: RoomProps) {
   }, [messages, isChatOpen, lastReadMessageCount]);
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
-      <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col transition-colors duration-300">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 transition-colors duration-300">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-white">Room: {roomId}</h1>
-            <p className="text-sm text-gray-400 mt-1">{connectionStatus}</p>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Room: {roomId}</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{connectionStatus}</p>
           </div>
           {!remoteStream ? (
             <button
               onClick={copyInviteLink}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 hover:scale-105 active:scale-95"
             >
               <Copy className="w-4 h-4" />
               Copy invite link
             </button>
           ) : (
-            <div className="flex items-center gap-2 bg-green-600 text-white font-medium py-2 px-4 rounded-lg">
-              <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
+            <div className="flex items-center gap-2 bg-green-600 dark:bg-green-500 text-white font-medium py-2 px-4 rounded-lg">
+              <div className="w-2 h-2 bg-green-300 dark:bg-green-200 rounded-full animate-pulse"></div>
               <span>Call in progress with {peerName}</span>
             </div>
           )}
@@ -219,25 +219,25 @@ export function Room({ roomId, userName, onLeave, isRoomCreator }: RoomProps) {
 
           {!localStream && !error && (
             <div className="text-center">
-              <div className="inline-flex items-center gap-2 bg-gray-800 text-gray-300 px-6 py-4 rounded-xl">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <div className="inline-flex items-center gap-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-6 py-4 rounded-xl transition-colors duration-300">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-700 dark:border-white"></div>
                 <span>Requesting camera and microphone access...</span>
               </div>
             </div>
           )}
 
           {error && !localStream && (
-            <div className="max-w-md mx-auto bg-red-900 bg-opacity-20 border border-red-800 rounded-xl p-6 text-center">
-              <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
-              <h3 className="text-xl font-semibold text-white mb-2">Media Access Required</h3>
-              <p className="text-gray-300 mb-4">{error}</p>
-              <p className="text-sm text-gray-400 mb-4">
+            <div className="max-w-md mx-auto bg-red-100 dark:bg-red-900 bg-opacity-20 dark:bg-opacity-20 border border-red-300 dark:border-red-800 rounded-xl p-6 text-center transition-colors duration-300">
+              <AlertCircle className="w-12 h-12 text-red-500 dark:text-red-400 mx-auto mb-3" />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Media Access Required</h3>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">{error}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Please allow camera and microphone access to join the call. You may need to refresh
                 the page and try again.
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 hover:scale-105 active:scale-95"
               >
                 Retry
               </button>
@@ -263,7 +263,7 @@ export function Room({ roomId, userName, onLeave, isRoomCreator }: RoomProps) {
       </main>
 
       {localStream && (
-        <footer className="bg-gray-800 border-t border-gray-700 px-6 py-6">
+        <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-6 transition-colors duration-300">
           <div className="max-w-7xl mx-auto flex items-center justify-center relative">
             <MediaControls
               onToggleAudio={toggleAudio}
@@ -285,12 +285,12 @@ export function Room({ roomId, userName, onLeave, isRoomCreator }: RoomProps) {
             {remoteStream && (
               <button
                 onClick={() => setIsChatOpen(!isChatOpen)}
-                className="absolute right-0 bg-gray-700 hover:bg-gray-600 text-white p-4 rounded-full transition-all"
+                className="absolute right-0 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-white p-4 rounded-full transition-all duration-300 hover:scale-110 active:scale-95"
                 title="Toggle chat"
               >
                 <MessageSquare className="w-6 h-6" />
                 {unreadCount > 0 && !isChatOpen && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-red-600 dark:bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}

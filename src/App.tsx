@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Home } from './pages/Home';
 import { Room } from './pages/Room';
+import { ThemeToggle } from './components/ThemeToggle';
 
 type View = 'home' | 'room';
 
@@ -79,32 +80,41 @@ function App() {
     if (!userName) {
       console.log('🔍 App: Rendering Home with autoJoinRoomId:', roomId);
       return (
-        <Home
-          onCreateMeeting={handleCreateMeeting}
-          onJoinMeeting={handleJoinMeeting}
-          autoJoinRoomId={roomId}
-        />
+        <>
+          <ThemeToggle />
+          <Home
+            onCreateMeeting={handleCreateMeeting}
+            onJoinMeeting={handleJoinMeeting}
+            autoJoinRoomId={roomId}
+          />
+        </>
       );
     }
 
     console.log('🔍 App: Rendering Room with roomId:', roomId, 'userName:', userName);
     return (
-      <Room
-        roomId={roomId}
-        userName={userName}
-        onLeave={handleLeave}
-        isRoomCreator={isRoomCreator}
-      />
+      <>
+        <ThemeToggle />
+        <Room
+          roomId={roomId}
+          userName={userName}
+          onLeave={handleLeave}
+          isRoomCreator={isRoomCreator}
+        />
+      </>
     );
   }
 
   console.log('🔍 App: Rendering default Home, view:', view, 'roomId:', roomId);
 
   return (
-    <Home
-      onCreateMeeting={handleCreateMeeting}
-      onJoinMeeting={handleJoinMeeting}
-    />
+    <>
+      <ThemeToggle />
+      <Home
+        onCreateMeeting={handleCreateMeeting}
+        onJoinMeeting={handleJoinMeeting}
+      />
+    </>
   );
 }
 

@@ -76,24 +76,24 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-cyan-50 flex items-center justify-center p-4 animate-gradient-shift">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4 animate-gradient-shift transition-colors duration-300">
       <div className="max-w-md w-full space-y-8">
         {/* Header with floating animation */}
         <div className="text-center animate-fade-in-down">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl mb-4 shadow-lg animate-float hover:scale-110 transition-transform duration-300">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-cyan-500 dark:from-blue-500 dark:to-cyan-400 rounded-2xl mb-4 shadow-lg animate-float hover:scale-110 transition-transform duration-300">
             <Video className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2 bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2 bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300 bg-clip-text text-transparent">
             Meetra
           </h1>
-          <p className="text-gray-600 animate-fade-in">Simple, secure 1-on-1 video calls</p>
+          <p className="text-gray-600 dark:text-gray-300 animate-fade-in">Simple, secure 1-on-1 video calls</p>
         </div>
 
         {!showNamePrompt ? (
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 space-y-6 animate-slide-up hover:shadow-2xl transition-shadow duration-300">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 space-y-6 animate-slide-up hover:shadow-2xl transition-shadow duration-300">
             <button
               onClick={handleCreateClick}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center gap-3 transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 group"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-500 dark:to-blue-600 dark:hover:from-blue-600 dark:hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center gap-3 transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 group"
             >
               <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
               Create Meeting
@@ -101,10 +101,10 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
 
             <div className="relative animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">or</span>
+                <span className="px-4 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">or</span>
               </div>
             </div>
 
@@ -115,12 +115,12 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
                 value={joinInput}
                 onChange={(e) => setJoinInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleJoinClick()}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-300 hover:border-blue-300 focus:scale-105"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-300 hover:border-blue-300 dark:hover:border-blue-500 focus:scale-105"
               />
               <button
                 onClick={handleJoinClick}
                 disabled={!joinInput.trim()}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 group"
+                className="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 group"
               >
                 <LogIn className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 Join Meeting
@@ -128,12 +128,12 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
             </div>
           </div>
         ) : (
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 space-y-6 animate-slide-up hover:shadow-2xl transition-shadow duration-300">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 space-y-6 animate-slide-up hover:shadow-2xl transition-shadow duration-300">
             <div className="animate-fade-in">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 {autoJoinRoomId ? 'Join this meeting' : 'Enter your name'}
               </h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 {autoJoinRoomId 
                   ? `Enter your name to join room: ${autoJoinRoomId.slice(0, 8)}...`
                   : 'This will be shown to other participants'
@@ -150,18 +150,18 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
                   onChange={(e) => setUserName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSubmitName()}
                   autoFocus
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-300 hover:border-blue-300 focus:scale-105"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-300 hover:border-blue-300 dark:hover:border-blue-500 focus:scale-105"
                 />
                 <button
                   type="button"
                   onClick={handleGenerateRandomName}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 group"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200 group"
                   title="Generate random name"
                 >
                   <Shuffle className="w-5 h-5 group-hover:rotate-180 transition-transform duration-300" />
                 </button>
               </div>
-              <p className="text-xs text-gray-500 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                 Click <Shuffle className="w-3 h-3 inline" /> to generate a random name
               </p>
             </div>
@@ -174,14 +174,14 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
                   setAction(null);
                   setJoinInput('');
                 }}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 active:scale-95"
+                className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 active:scale-95"
               >
                 Back
               </button>
               <button
                 onClick={handleSubmitName}
                 disabled={!userName.trim()}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 hover:shadow-lg"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-500 dark:to-blue-600 dark:hover:from-blue-600 dark:hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 hover:shadow-lg"
               >
                 {autoJoinRoomId ? 'Join Meeting' : 'Continue'}
               </button>
@@ -191,15 +191,15 @@ export function Home({ onCreateMeeting, onJoinMeeting, autoJoinRoomId }: HomePro
 
         {notification && (
           <div className={`p-4 rounded-xl animate-slide-in-bottom ${
-            notification.type === 'success' ? 'bg-green-100 text-green-800' :
-            notification.type === 'error' ? 'bg-red-100 text-red-800' :
-            'bg-blue-100 text-blue-800'
+            notification.type === 'success' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' :
+            notification.type === 'error' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
+            'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
           }`}>
             {notification.message}
           </div>
         )}
 
-        <div className="text-center text-sm text-gray-500 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+        <div className="text-center text-sm text-gray-500 dark:text-gray-400 animate-fade-in" style={{ animationDelay: '0.3s' }}>
           <p>WebRTC-powered peer-to-peer video calling</p>
         </div>
       </div>
