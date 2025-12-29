@@ -20,7 +20,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
   const [isAudioOnly, setIsAudioOnly] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [remoteScreenSharing, setRemoteScreenSharing] = useState(false);
-  
+
   // Chat state
   const [messages, setMessages] = useState<Array<{
     id: string;
@@ -30,12 +30,12 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
     isLocal: boolean;
   }>>([]);
   const [remoteTyping, setRemoteTyping] = useState(false);
-  
+
   // Device selection state
   const [audioInputDeviceId, setAudioInputDeviceId] = useState<string>('');
   const [audioOutputDeviceId, setAudioOutputDeviceId] = useState<string>('');
   const [videoInputDeviceId, setVideoInputDeviceId] = useState<string>('');
-  
+
   // Store original video track when screen sharing
   const originalVideoTrack = useRef<MediaStreamTrack | null>(null);
   const screenShareStream = useRef<MediaStream | null>(null);
@@ -46,6 +46,14 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
   const iceCandidateQueue = useRef<RTCIceCandidateInit[]>([]);
   const hasRemoteDescription = useRef<boolean>(false);
   const peerId = useRef<string | null>(null);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const initializeMedia = useCallback(async () => {
     try {
@@ -57,17 +65,17 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
         true  // video
       );
       setLocalStream(stream);
-      
+
       // Check if we have video tracks to determine if we're in audio-only mode
       const hasVideo = stream.getVideoTracks().length > 0;
       setIsAudioOnly(!hasVideo);
-      
+
       if (hasVideo) {
         setConnectionStatus('Connected to camera and microphone');
       } else {
         setConnectionStatus('Connected to microphone (audio-only mode)');
       }
-      
+
       // Save the device IDs from the stream for future reference
       if (!audioInputDeviceId && stream.getAudioTracks().length > 0) {
         const audioTrack = stream.getAudioTracks()[0];
@@ -76,7 +84,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
           setAudioInputDeviceId(audioSettings.deviceId);
         }
       }
-      
+
       if (!videoInputDeviceId && stream.getVideoTracks().length > 0) {
         const videoTrack = stream.getVideoTracks()[0];
         const videoSettings = videoTrack.getSettings();
@@ -84,7 +92,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
           setVideoInputDeviceId(videoSettings.deviceId);
         }
       }
-      
+
       return stream;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to access camera/microphone';
@@ -98,7 +106,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
     if (!pc.current || !hasRemoteDescription.current) return;
 
     console.log(`🧊 Processing ${iceCandidateQueue.current.length} queued ICE candidates`);
-    
+
     while (iceCandidateQueue.current.length > 0) {
       const candidate = iceCandidateQueue.current.shift();
       if (candidate) {
@@ -117,7 +125,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
 
     try {
       console.log('📤 Creating offer for peer:', peerId);
-      
+
       // Log current senders before creating offer
       const senders = pc.current.getSenders();
       console.log('📤 Current senders before offer:', senders.map(s => ({
@@ -125,7 +133,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
         trackId: s.track?.id,
         enabled: s.track?.enabled
       })));
-      
+
       const offer = await pc.current.createOffer({
         offerToReceiveAudio: true,
         offerToReceiveVideo: true
@@ -151,7 +159,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
       console.log('📥 Setting remote description from offer');
       await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
       hasRemoteDescription.current = true;
-      
+
       console.log('📤 Creating and setting local answer');
       const answer = await pc.current.createAnswer();
       await pc.current.setLocalDescription(answer);
@@ -177,7 +185,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
       console.log('📥 Setting remote description from answer');
       await pc.current.setRemoteDescription(new RTCSessionDescription(answer));
       hasRemoteDescription.current = true;
-      
+
       // Log current receivers after setting remote description
       const receivers = pc.current.getReceivers();
       console.log('📥 Current receivers after answer:', receivers.map(r => ({
@@ -185,7 +193,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
         trackId: r.track?.id,
         enabled: r.track?.enabled
       })));
-      
+
       // Process any queued ICE candidates
       await processQueuedCandidates();
     } catch (err) {
@@ -238,7 +246,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
               readyState: track.readyState,
               streamId: stream.id
             });
-            
+
             // Ensure the track is properly associated with the stream
             const sender = pc.current.addTrack(track, stream);
             console.log('🎵 Track sender created:', sender.track?.kind);
@@ -256,7 +264,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
                 priority: event.candidate.priority,
                 foundation: event.candidate.foundation
               });
-              
+
               if (ws.current && peerId.current) {
                 ws.current.send(JSON.stringify({
                   type: 'ice-candidate',
@@ -272,7 +280,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
           pc.current.onicegatheringstatechange = () => {
             const state = pc.current?.iceGatheringState;
             console.log('🧊 ICE Gathering State changed:', state);
-            
+
             switch (state) {
               case 'new':
                 console.log('🧊 ICE gathering has not started');
@@ -289,7 +297,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
           pc.current.oniceconnectionstatechange = () => {
             const state = pc.current?.iceConnectionState;
             console.log('🧊 ICE Connection State changed:', state);
-            
+
             switch (state) {
               case 'new':
                 console.log('🧊 ICE connection is new');
@@ -347,9 +355,9 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
               enabled: event.track.enabled,
               streams: event.streams?.length || 0
             });
-            
+
             if (event.streams && event.streams[0]) {
-              console.log('🎥 Setting remote stream with tracks:', 
+              console.log('🎥 Setting remote stream with tracks:',
                 event.streams[0].getTracks().map(t => ({ kind: t.kind, id: t.id, enabled: t.enabled }))
               );
               remoteStreamRef.current = event.streams[0];
@@ -357,7 +365,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
               setConnectionStatus('Call connected - you can now hear and see each other');
             } else {
               console.warn('🎥 No streams in track event, creating/updating stream');
-              
+
               // If we don't have a remote stream yet, create one
               if (!remoteStreamRef.current) {
                 const newStream = new MediaStream([event.track]);
@@ -377,7 +385,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
           pc.current.onconnectionstatechange = () => {
             const state = pc.current?.connectionState;
             console.log('🔗 Peer Connection State changed:', state);
-            
+
             if (state === 'connected') {
               console.log('🔗 Peer connection fully established');
               setIsConnected(true);
@@ -476,7 +484,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
               console.log('📞 Received call-ended-by-creator event:', data);
               setConnectionStatus('Call ended by room creator');
               setError(`Call ended: ${data.creatorName} ended the call`);
-              
+
               // Clean up media tracks
               if (localStream) {
                 localStream.getTracks().forEach(track => {
@@ -486,18 +494,18 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
                   }
                 });
               }
-              
+
               // Clean up peer connection
               if (pc.current) {
                 pc.current.close();
                 pc.current = null;
                 console.log('📞 Closed peer connection due to call end');
               }
-              
+
               // Store the notification message for after redirect
               localStorage.setItem('callEndedNotification', `${data.creatorName} ended the call`);
               console.log('📞 Stored notification, redirecting to home...');
-              
+
               // Redirect to home page after a short delay
               setTimeout(() => {
                 window.location.href = '/';
@@ -562,7 +570,8 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
         console.log('✅ Cleanup: Closed WebSocket on unmount');
       }
     };
-  }, [roomId, userName, initializeMedia, createOffer, handleOffer, handleAnswer, handleIceCandidate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, userName]);
 
   const toggleAudio = useCallback(() => {
     if (localStream) {
@@ -589,7 +598,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
 
   const leaveCall = useCallback((shouldReload = true, isEndCall = false) => {
     console.log('🚪 Leaving call...');
-    
+
     // Send leave or end-call message to server FIRST before cleanup
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       if (isEndCall) {
@@ -656,15 +665,15 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
   // Function to switch audio input device
   const switchAudioDevice = useCallback(async (deviceId: string) => {
     setAudioInputDeviceId(deviceId);
-    
+
     if (!localStream) return;
-    
+
     try {
       // Stop current audio tracks
       localStream.getAudioTracks().forEach(track => {
         track.stop();
       });
-      
+
       // Get new stream with the selected audio device
       const newStream = await getMediaStreamWithDevice(
         deviceId,
@@ -672,44 +681,56 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
         true,
         false
       );
-      
+
+      if (!isMounted.current) {
+        newStream.getTracks().forEach(track => track.stop());
+        return;
+      }
+
       // Add new audio tracks to the existing stream
       newStream.getAudioTracks().forEach(track => {
         localStream.addTrack(track);
       });
-      
+
       // Replace the audio track in the peer connection if it exists
-      if (pc.current && isConnected) {
-        const audioSenders = pc.current.getSenders().filter(sender => 
+      if (pc.current && isConnected && pc.current.signalingState !== 'closed') {
+        const audioSenders = pc.current.getSenders().filter(sender =>
           sender.track && sender.track.kind === 'audio'
         );
-        
+
         if (audioSenders.length > 0 && newStream.getAudioTracks().length > 0) {
-          await audioSenders[0].replaceTrack(newStream.getAudioTracks()[0]);
-          console.log('🎤 Replaced audio track in peer connection');
+          try {
+            await audioSenders[0].replaceTrack(newStream.getAudioTracks()[0]);
+            console.log('🎤 Replaced audio track in peer connection');
+          } catch (err) {
+            console.error('Error replacing audio track:', err);
+            // We don't abort here, as we still want to update local stream if possible
+          }
         }
       }
-      
+
       setLocalStream(localStream);
       console.log('🎤 Audio device switched to:', deviceId);
     } catch (err) {
       console.error('Error switching audio device:', err);
-      setError('Failed to switch audio device');
+      if (isMounted.current) {
+        setError('Failed to switch audio device');
+      }
     }
   }, [localStream, videoInputDeviceId, isConnected]);
-  
+
   // Function to switch video input device
   const switchVideoDevice = useCallback(async (deviceId: string) => {
     setVideoInputDeviceId(deviceId);
-    
+
     if (!localStream) return;
-    
+
     try {
       // Stop current video tracks
       localStream.getVideoTracks().forEach(track => {
         track.stop();
       });
-      
+
       // Get new stream with the selected video device
       const newStream = await getMediaStreamWithDevice(
         audioInputDeviceId,
@@ -717,40 +738,51 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
         false,
         true
       );
-      
+
+      if (!isMounted.current) {
+        newStream.getTracks().forEach(track => track.stop());
+        return;
+      }
+
       // Add new video tracks to the existing stream
       newStream.getVideoTracks().forEach(track => {
         localStream.addTrack(track);
       });
-      
+
       // Replace the video track in the peer connection if it exists
-      if (pc.current && isConnected) {
-        const videoSenders = pc.current.getSenders().filter(sender => 
+      if (pc.current && isConnected && pc.current.signalingState !== 'closed') {
+        const videoSenders = pc.current.getSenders().filter(sender =>
           sender.track && sender.track.kind === 'video'
         );
-        
+
         if (videoSenders.length > 0 && newStream.getVideoTracks().length > 0) {
-          await videoSenders[0].replaceTrack(newStream.getVideoTracks()[0]);
-          console.log('📹 Replaced video track in peer connection');
+          try {
+            await videoSenders[0].replaceTrack(newStream.getVideoTracks()[0]);
+            console.log('📹 Replaced video track in peer connection');
+          } catch (err) {
+            console.error('Error replacing video track:', err);
+          }
         }
       }
-      
+
       setLocalStream(localStream);
       setIsAudioOnly(false);
       console.log('📹 Video device switched to:', deviceId);
     } catch (err) {
       console.error('Error switching video device:', err);
-      setError('Failed to switch video device');
+      if (isMounted.current) {
+        setError('Failed to switch video device');
+      }
     }
   }, [localStream, audioInputDeviceId, isConnected]);
-  
+
   // Function to set audio output device (speakers)
   const setAudioOutput = useCallback((deviceId: string) => {
     setAudioOutputDeviceId(deviceId);
-    
+
     // Apply the audio output device to any audio/video elements
     const audioElements = document.querySelectorAll('audio, video') as NodeListOf<HTMLMediaElement & { sinkId?: string }>;
-    
+
     audioElements.forEach(element => {
       if (element.setSinkId && typeof element.setSinkId === 'function') {
         element.setSinkId(deviceId).then(() => {
@@ -773,39 +805,39 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
       if (isScreenSharing) {
         // Stop screen sharing and revert to camera
         console.log('📺 Stopping screen sharing');
-        
+
         // Stop all screen share tracks
         if (screenShareStream.current) {
           screenShareStream.current.getTracks().forEach(track => {
             track.stop();
           });
         }
-        
+
         // If we have the original video track, restore it
         if (originalVideoTrack.current) {
           // Find video sender
-          const videoSenders = pc.current.getSenders().filter(sender => 
+          const videoSenders = pc.current.getSenders().filter(sender =>
             sender.track && sender.track.kind === 'video'
           );
-          
+
           if (videoSenders.length > 0) {
             // Replace the screen share track with the original camera track
             await videoSenders[0].replaceTrack(originalVideoTrack.current);
             console.log('📹 Restored camera video track');
-            
+
             // Add the track back to local stream if needed
             const hasTrack = localStream.getTracks().some(track => track.id === originalVideoTrack.current?.id);
             if (!hasTrack && originalVideoTrack.current) {
               localStream.addTrack(originalVideoTrack.current);
             }
           }
-          
+
           originalVideoTrack.current = null;
         }
-        
+
         screenShareStream.current = null;
         setIsScreenSharing(false);
-        
+
         // Notify remote peer that screen sharing stopped
         if (ws.current && peerId.current) {
           ws.current.send(JSON.stringify({
@@ -814,22 +846,22 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
             target: peerId.current
           }));
         }
-        
+
         return false;
       } else {
         // Start screen sharing
         console.log('📺 Starting screen sharing');
-        
+
         // Get screen share stream
         const stream = await getScreenShareStream();
         screenShareStream.current = stream;
-        
+
         // Store original video track
         const currentVideoTrack = localStream.getVideoTracks()[0];
         if (currentVideoTrack) {
           originalVideoTrack.current = currentVideoTrack;
         }
-        
+
         // Get the video track from screen share
         const screenVideoTrack = stream.getVideoTracks()[0];
         if (screenVideoTrack) {
@@ -839,12 +871,12 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
               await toggleScreenShare();
             }
           };
-          
+
           // Find video sender
-          const videoSenders = pc.current.getSenders().filter(sender => 
+          const videoSenders = pc.current.getSenders().filter(sender =>
             sender.track && sender.track.kind === 'video'
           );
-          
+
           if (videoSenders.length > 0) {
             // Replace camera track with screen share track
             await videoSenders[0].replaceTrack(screenVideoTrack);
@@ -854,9 +886,9 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
             pc.current.addTrack(screenVideoTrack, localStream);
             console.log('📺 Added screen share as new track');
           }
-          
+
           setIsScreenSharing(true);
-          
+
           // Notify remote peer that screen sharing started
           if (ws.current && peerId.current) {
             ws.current.send(JSON.stringify({
@@ -865,7 +897,7 @@ export function useWebRTC({ roomId, userName }: UseWebRTCProps) {
               target: peerId.current
             }));
           }
-          
+
           return true;
         } else {
           setError('No video track found in screen share');
