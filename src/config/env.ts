@@ -2,24 +2,23 @@
 // This file reads environment variables and provides them to the application
 
 const getEnvVar = (key: string, defaultValue: string): string => {
-  // In Vite, environment variables are accessed via import.meta.env
-  // and must be prefixed with VITE_ to be exposed to the client
-  const value = import.meta.env[key];
-  return value !== undefined ? value : defaultValue;
-};
-
-// Helper function to convert WebSocket URL to HTTP URL
-const wsToHttp = (wsUrl: string): string => {
-  return wsUrl.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:');
+  if (typeof process !== 'undefined' && process.env[key] !== undefined) {
+    return process.env[key] as string;
+  }
+  return defaultValue;
 };
 
 export const config = {
-  // WebSocket/Backend URL
-  wsUrl: getEnvVar('VITE_WS_URL', 'ws://localhost:3001'),
-  
-  // HTTP API URL (derived from WebSocket URL or can be set separately)
-  apiUrl: getEnvVar('VITE_API_URL', '') || wsToHttp(getEnvVar('VITE_WS_URL', 'ws://localhost:3001')),
+  wsUrl: getEnvVar('NEXT_PUBLIC_WS_URL', 'ws://localhost:3001'),
+  apiUrl: getEnvVar('NEXT_PUBLIC_API_URL', ''),
 } as const;
 
-// Type-safe access to config
+export const getApiUrl = (): string => {
+  if (config.apiUrl) return config.apiUrl;
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return 'http://localhost:3000';
+};
+
 export type Config = typeof config;

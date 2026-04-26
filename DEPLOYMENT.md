@@ -15,22 +15,22 @@ This project uses environment variables to configure the backend/WebSocket URL. 
 
    **For Local Development:**
    ```bash
-   VITE_WS_URL=ws://localhost:3001
+   NEXT_PUBLIC_WS_URL=ws://localhost:3001
    ```
 
-   **For Production (Vercel):**
+   **For Production:**
    ```bash
-   VITE_WS_URL=wss://sage-quick-meet.onrender.com
+   NEXT_PUBLIC_WS_URL=wss://sage-quick-meet.onrender.com
    ```
 
 ### Deploying to Vercel
 
 When deploying to Vercel, you have two options:
 
-#### Option 1: Set Environment Variables in Vercel Dashboard
-1. Go to your Vercel project settings
+#### Option 1: Set Environment Variables in Your Hosting Dashboard
+1. Go to your hosting project settings
 2. Navigate to "Environment Variables"
-3. Add `VITE_WS_URL` with value `wss://sage-quick-meet.onrender.com`
+3. Add `NEXT_PUBLIC_WS_URL` with value `wss://sage-quick-meet.onrender.com`
 4. Deploy your project
 
 #### Option 2: Use `.env` file (Not Recommended for Production)
@@ -41,7 +41,7 @@ When deploying to Vercel, you have two options:
 
 - **WebSocket Protocol:** Use `ws://` for local HTTP and `wss://` for production HTTPS
 - **CORS:** Ensure your backend at `https://sage-quick-meet.onrender.com` allows requests from your Vercel domain
-- **Environment Variables:** Vite requires the `VITE_` prefix for environment variables to be exposed to the client
+- **Environment Variables:** Next.js requires the `NEXT_PUBLIC_` prefix for client-side environment variables
 
 ### Testing
 
@@ -54,34 +54,20 @@ After configuration, test your connection:
 ### Switching Backends
 
 To switch between different backend URLs (e.g., staging, production):
-1. Update the `VITE_WS_URL` in your `.env` file
+1. Update the `NEXT_PUBLIC_WS_URL` in your `.env` file
 2. Restart your development server
-3. For Vercel deployments, update the environment variable in the dashboard and redeploy
+3. For deployments, update the environment variable in your hosting dashboard and redeploy
 
-### Vercel SPA Routing Configuration
+### Deployment Notes
 
-This project includes a `vercel.json` file that configures Vercel to handle Single Page Application (SPA) routing correctly.
+This project is now a Next.js application, so you no longer need an `index.html` SPA rewrite.
 
-**Why is this needed?**
-- The app uses HTML5 history mode routing (URLs like `/room/xxx` instead of `/#/room/xxx`)
-- Without this configuration, Vercel returns 404 errors when users visit routes directly or refresh the page
-- The `vercel.json` file tells Vercel to serve `index.html` for all routes, allowing React to handle the routing
+For Vercel and other Next.js hosts, the default build and routing behavior is sufficient. Just deploy the app normally after configuring `NEXT_PUBLIC_WS_URL`.
 
-**What it does:**
-```json
-{
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
-}
-```
+**What to do:**
+- Set `NEXT_PUBLIC_WS_URL` in your hosting environment
+- Run `npm run build` and deploy the resulting Next.js app
 
-This configuration rewrites all incoming requests to serve the main `index.html` file, which then loads the React app that handles client-side routing.
-
-**Troubleshooting:**
-- If you get 404 errors on Vercel, ensure `vercel.json` is committed to your repository
-- After adding `vercel.json`, you may need to redeploy your Vercel project
-- Check that the file is in the root directory of your project (same level as `package.json`)
+**Note:**
+- Direct route access and refreshes are handled by Next.js automatically
+- No `vercel.json` rewrite is required for standard Next.js deployments

@@ -1,9 +1,9 @@
-import { config } from '../config/env';
+import { config, getApiUrl } from '../config/env';
 
 // Fetch ICE servers dynamically from server
 async function getIceServers(): Promise<RTCConfiguration> {
   try {
-    const response = await fetch(`${config.apiUrl}/get-ice-servers`);
+    const response = await fetch(`${getApiUrl()}/api/get-ice-servers`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

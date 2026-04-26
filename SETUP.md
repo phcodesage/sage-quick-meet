@@ -13,7 +13,7 @@ npm run dev
 ```
 
 This single command starts both:
-- **Frontend**: http://localhost:5173
+- **Frontend**: http://localhost:3000
 - **Signaling Server**: ws://localhost:3001
 
 ### 3. Test the Video Call
@@ -38,8 +38,8 @@ This single command starts both:
 ## Available Scripts
 
 - `npm run dev` - Start both client and server
-- `npm run dev:client` - Start only the Vite dev server
-- `npm run dev:server` - Start only the signaling server
+- `npm run dev:app` - Start only the Next.js dev server
+- `npm run dev:ws` - Start only the signaling server
 - `npm run build` - Build for production
 - `npm run typecheck` - Run TypeScript type checking
 - `npm run lint` - Run ESLint
@@ -50,8 +50,8 @@ This single command starts both:
 
 If port 5173 or 3001 is already in use:
 
-**Frontend (Vite)**:
-- Vite will automatically try the next available port
+**Frontend (Next.js)**:
+- Next.js will automatically try the next available port if 3000 is in use
 - Check the terminal output for the actual port
 
 **Signaling Server**:
@@ -140,7 +140,8 @@ See README.md for detailed production considerations.
 ## File Overview
 
 ### Frontend
-- `src/App.tsx` - Main component with routing logic
+- `src/views/Home.tsx` - Home page component
+- `src/views/Room.tsx` - Room page component
 - `src/pages/Home.tsx` - Landing page for creating/joining rooms
 - `src/pages/Room.tsx` - Video call interface
 - `src/hooks/useWebRTC.ts` - WebRTC connection management

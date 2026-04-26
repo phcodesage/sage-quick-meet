@@ -32,36 +32,36 @@ This application uses environment variables for configuration. You can easily ch
 2. Edit the `.env` file and update the values:
    ```env
    # Backend/WebSocket URL Configuration
-   VITE_WS_URL=ws://localhost:3001
+   NEXT_PUBLIC_WS_URL=ws://localhost:3001
    
-   # HTTP API URL (optional - auto-derived from VITE_WS_URL if not set)
-   # VITE_API_URL=http://localhost:3001
+   # HTTP API URL (optional - if not set, will be derived from the current browser origin)
+   # NEXT_PUBLIC_API_URL=http://localhost:3000
    
    # For production, use your production backend URL:
-   # VITE_WS_URL=wss://your-backend-domain.com
-   # VITE_API_URL=https://your-backend-domain.com
+   # NEXT_PUBLIC_WS_URL=wss://your-backend-domain.com
+   # NEXT_PUBLIC_API_URL=https://your-backend-domain.com
    ```
 
 ### Available Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `VITE_WS_URL` | WebSocket URL for the signaling server | `ws://localhost:3001` |
-| `VITE_API_URL` | HTTP API URL for REST endpoints (optional, auto-derived from `VITE_WS_URL`) | Auto-derived from `VITE_WS_URL` |
+| `NEXT_PUBLIC_WS_URL` | WebSocket URL for the signaling server | `ws://localhost:3001` |
+| `NEXT_PUBLIC_API_URL` | HTTP API URL for REST endpoints (optional, auto-derived from the current browser origin) | Auto-derived from the current origin |
 
-> **Note:** In Vite, environment variables must be prefixed with `VITE_` to be exposed to the client-side code.
+> **Note:** In Next.js, client-side environment variables must be prefixed with `NEXT_PUBLIC_`.
 
 ### Production Deployment
 
 When deploying to production:
 
-1. Update `VITE_WS_URL` to your production backend URL (use `wss://` for secure WebSocket)
+1. Update `NEXT_PUBLIC_WS_URL` to your production backend URL (use `wss://` for secure WebSocket)
 2. Ensure your backend server is running and accessible
 3. Build the application with the production environment variables
 
 Example production `.env`:
 ```env
-VITE_WS_URL=wss://api.yourdomain.com
+NEXT_PUBLIC_WS_URL=wss://api.yourdomain.com
 ```
 
 ## Installation
@@ -97,13 +97,17 @@ npm run preview
 ## Project Structure
 
 ```
+app/
+├── api/            # Next.js serverless API routes
+├── room/           # Dynamic room page
+├── page.tsx        # Main homepage
 src/
+├── app/            # Next.js app global styles
 ├── components/     # React components
 ├── config/         # Configuration files (environment variables)
 ├── hooks/          # Custom React hooks (WebRTC logic)
-├── pages/          # Page components (Home, Room)
 ├── utils/          # Utility functions
-└── App.tsx         # Main application component
+└── views/          # Shared page components (Home, Room)
 ```
 
 ## How It Works
@@ -118,7 +122,7 @@ src/
 
 - **React** - UI framework
 - **TypeScript** - Type safety
-- **Vite** - Build tool
+- **Next.js** - React framework and server-side rendering
 - **WebRTC** - Real-time communication
 - **Tailwind CSS** - Styling
 - **Lucide React** - Icons
